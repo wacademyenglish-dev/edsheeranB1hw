@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WOLFFY Mobile HW: Castle on the Hill (B1)</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Oswald:wght@400;600;700&family=Outfit:wght@300;400;600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        theme: {
+                            black: '#0f172a',
+                            asphalt: '#1e1b4b',
+                            concrete: '#334155',
+                            sunset: '#FF7A00',
+                            gold: '#FFC300'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Montserrat', 'sans-serif'],
+                        impact: ['Oswald', 'sans-serif'],
+                        mono: ['"Share Tech Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            background-image: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #0f172a 70%);
+            color: #fdfdfd;
+            font-family: 'Outfit', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 0; user-select: none;
+        }
+
+        .mobile-wrapper {
+            width: 100%; max-width: 430px; height: 100vh; max-height: 100vh;
+            background-color: #0a0f1c; position: relative; overflow-x: hidden; overflow-y: auto; scroll-behavior: smooth;
+        }
+        @media (min-width: 640px) {
+            .mobile-wrapper {
+                height: 90vh; border-radius: 40px; border: 8px solid #111;
+                box-shadow: 0 25px 50px -12px rgba(255, 122, 0, 0.2), inset 0 0 0 4px #000;
+            }
+        }
+        .mobile-wrapper::-webkit-scrollbar { width: 4px; }
+        .mobile-wrapper::-webkit-scrollbar-track { background: #000; }
+        .mobile-wrapper::-webkit-scrollbar-thumb { background: #FF7A00; border-radius: 10px; }
+
+        .question-card { background-color: #111; border: 1px solid #334155; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .question-card.active { border-color: #FF7A00; box-shadow: 0 0 15px rgba(255, 122, 0, 0.15); }
+
+        .option-btn { transition: all 0.2s; border-left: 4px solid transparent; background-color: #050505; border: 1px solid #334155;}
+        .option-btn:hover:not(:disabled) { background: rgba(255, 122, 0, 0.1); border-color: #FF7A00; transform: translateX(4px); }
+        .option-btn.correct { background-color: #10b981 !important; color: white !important; border-color: #10b981 !important; font-weight: bold; box-shadow: 0 0 10px rgba(16,185,129,0.4); }
+        .option-btn.wrong { background-color: #ef4444 !important; color: white !important; border-color: #ef4444 !important; font-weight: bold; box-shadow: 0 0 10px rgba(239,68,68,0.4); }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        .shake { animation: shake 0.4s both; border-color: #ef4444 !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }
+
+        .progress-point { transition: all 0.3s; }
+        .progress-point.filled { background-color: #FF7A00; box-shadow: 0 0 8px #FF7A00; }
+
+        .confetti { position: absolute; width: 6px; height: 12px; opacity: 0; z-index: 100; box-shadow: 0 0 5px currentColor;}
+        @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+        .vinyl-spin { animation: spin 4s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-wrapper" id="app-container">
+        
+        <!-- HEADER -->
+        <header class="sticky top-0 z-50 bg-[#0a0f1c]/95 backdrop-blur-md border-b border-[#334155] px-6 pt-5 pb-3 shadow-md">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="font-impact font-black text-theme-sunset tracking-widest text-xl uppercase">WOLFFY <span class="text-white">B1</span></h1>
+                    <p class="font-mono text-[10px] text-gray-400 uppercase tracking-widest font-bold">HW TAPE • ED SHEERAN</p>
+                </div>
+                <div class="text-right bg-[#111] px-3 py-1 rounded border border-[#334155]">
+                    <span id="score-counter" class="font-mono text-xs font-bold text-white tracking-widest">0/15 HITS</span>
+                </div>
+            </div>
+            <div class="flex justify-between gap-1 mb-1" id="progress-container"></div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="p-4 pb-32 space-y-6">
+            
+            <div class="bg-[#111] p-5 rounded-xl shadow-lg border border-[#334155] relative overflow-hidden flex flex-col items-center text-center">
+                <div class="absolute w-32 h-32 bg-theme-sunset/10 rounded-full blur-2xl top-0 left-0"></div>
+                <div class="w-24 h-24 rounded-full border-4 border-[#333] border-t-theme-sunset animate-spin mb-4 shadow-[0_0_15px_rgba(255,122,0,0.3)] flex items-center justify-center z-10">
+                    <div class="w-20 h-20 rounded-full overflow-hidden vinyl-spin border border-black">
+                        <!-- Ed Sheeran Divide Album Cover -->
+                        <img src="https://upload.wikimedia.org/wikipedia/pt/6/62/Ed_Sheeran_-_Castle_on_the_Hill.jpg" class="w-full h-full object-cover grayscale opacity-90">
+                    </div>
+                </div>
+                <div class="w-full bg-[#050505] mt-2 p-3 text-center border border-[#334155] rounded z-10">
+                    <h2 class="font-impact font-black text-white text-xl uppercase tracking-widest">Nostalgia Quiz</h2>
+                    <p class="font-mono text-[10px] font-bold text-theme-gold mt-1 uppercase tracking-widest">Past Cont. vs Simple</p>
+                </div>
+            </div>
+
+            <div id="quiz-container" class="space-y-6 relative z-10"></div>
+        </main>
+
+        <!-- SUBMIT BUTTON -->
+        <div class="sticky bottom-0 left-0 w-full bg-gradient-to-t from-[#0a0f1c] via-[#0a0f1c] to-transparent pt-12 pb-6 px-6 z-50">
+            <button id="submit-btn" onclick="checkAllAndSubmit()" class="w-full bg-theme-sunset text-black font-impact font-black text-xl tracking-widest uppercase py-4 rounded shadow-[0_0_15px_rgba(255,122,0,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3 hover:bg-white">
+                <i class="fa-solid fa-bolt"></i>
+                FINISH HOMEWORK
+            </button>
+        </div>
+
+        <!-- SUCCESS OVERLAY -->
+        <div id="success-overlay" class="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-sm z-[100] flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 hidden">
+            <div class="w-24 h-24 bg-[#111] border-2 border-theme-gold rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,195,0,0.5)] transform scale-50 transition-transform duration-500" id="success-badge">
+                <i class="fa-solid fa-star text-5xl text-theme-gold"></i>
+            </div>
+            <h1 class="font-impact font-black text-4xl text-white mb-2 text-center uppercase tracking-widest">PERFECT!</h1>
+            <div class="bg-[#111] border border-theme-gold px-8 py-2 rounded mb-6 mt-4 shadow-[0_0_15px_rgba(255,195,0,0.3)]">
+                <div class="font-mono text-white text-xl font-bold tracking-widest" id="final-score">SCORE: 15/15</div>
+            </div>
+            <p class="font-sans text-gray-400 text-sm mb-10 text-center max-w-[280px]">You unlocked the memories and mastered Narrative Tenses. Great job!</p>
+            <button onclick="location.reload()" class="bg-white text-black font-impact font-black px-10 py-4 rounded uppercase text-lg tracking-widest hover:bg-gray-200 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.2)]">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [
+            { q: "1. 'I _______ from my brother when I fell.'", a: ["was running", "ran", "running"], c: 0 },
+            { q: "2. We use the Past Continuous to...", a: ["Talk about the future.", "Describe a background scene.", "Describe a short action."], c: 1 },
+            { q: "3. 'While we _______ the sunset, the phone rang.'", a: ["watched", "are watching", "were watching"], c: 2 },
+            { q: "4. 'I found my heart and _______ it here.'", a: ["was breaking", "broke", "break"], c: 1 },
+            { q: "5. They were driving when the car _______ down.", a: ["was breaking", "broke", "breaks"], c: 1 },
+            { q: "6. What does 'Nostalgia' mean?", a: ["A fear of the dark.", "A sentimental longing for the past.", "Being very tired."], c: 1 },
+            { q: "7. 'We _______ to the radio when he arrived.'", a: ["were listening", "listened", "listen"], c: 0 },
+            { q: "8. 'I tasted the sweet perfume...' The tense is:", a: ["Past Simple", "Past Continuous", "Present Simple"], c: 0 },
+            { q: "9. What is the past continuous of 'She sleeps'?", a: ["She slept.", "She was sleeping.", "She is sleeping."], c: 1 },
+            { q: "10. 'The sun _______ and the birds _______.'", a: ["shone / sang", "was shining / were singing", "shines / sing"], c: 1 },
+            { q: "11. In the song, Framlingham Castle represents...", a: ["His favorite restaurant.", "His childhood memories & roots.", "A place he hates."], c: 1 },
+            { q: "12. 'When I _______ her, she _______.'", a: ["saw / was reading", "was seeing / read", "saw / read"], c: 0 },
+            { q: "13. 'Roar' (like a car engine) means...", a: ["A quiet whisper.", "A full, deep, loud sound.", "A flashing light."], c: 1 },
+            { q: "14. Past Simple is usually used for...", a: ["Short, completed actions/interruptions.", "Long background actions.", "Things happening right now."], c: 0 },
+            { q: "15. 'I _______ younger then.' (State verb)", a: ["was being", "was", "were"], c: 1 }
+        ];
+
+        let userAnswers = Array(15).fill(null);
+        let solvedCount = 0;
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            const progress = document.getElementById('progress-container');
+            
+            quizData.forEach((item, idx) => {
+                const dot = document.createElement('div');
+                dot.className = `h-1 flex-1 bg-white/10 rounded-full progress-point dot-${idx}`;
+                progress.appendChild(dot);
+
+                const card = document.createElement('div');
+                card.className = `question-card rounded-xl p-5 shadow-lg q-card-${idx}`;
+                card.innerHTML = `
+                    <p class="font-sans text-lg font-bold mb-4 tracking-wide text-white leading-snug">${item.q}</p>
+                    <div class="grid grid-cols-1 gap-2 font-impact tracking-wider text-sm uppercase">
+                        ${item.a.map((opt, oIdx) => `
+                            <button class="option-btn border border-[#334155] text-gray-300 py-4 px-4 rounded text-left flex items-center justify-between group btn-${idx}-${oIdx}" onclick="answer(${idx}, ${oIdx})">
+                                <span>${opt}</span>
+                                <div class="w-4 h-4 rounded border border-gray-600 group-hover:border-theme-sunset transition-colors flex items-center justify-center text-[10px]"></div>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function answer(qIdx, oIdx) {
+            if (userAnswers[qIdx] !== null) return;
+
+            const correct = quizData[qIdx].c;
+            const btn = document.querySelector(`.btn-${qIdx}-${oIdx}`);
+            const card = document.querySelector(`.q-card-${qIdx}`);
+            const dot = document.querySelector(`.dot-${qIdx}`);
+            const allBtnsInCard = card.querySelectorAll('.option-btn');
+
+            allBtnsInCard.forEach(b => b.disabled = true);
+
+            if (oIdx === correct) {
+                btn.classList.add('correct');
+                btn.classList.remove('text-gray-300', 'bg-[#050505]');
+                btn.querySelector('div').innerHTML = '<i class="fa-solid fa-check"></i>';
+                btn.querySelector('div').className = 'w-4 h-4 flex items-center justify-center text-[10px] border-none text-white';
+                userAnswers[qIdx] = true;
+            } else {
+                btn.classList.add('wrong');
+                btn.classList.remove('text-gray-300', 'bg-[#050505]');
+                btn.querySelector('div').innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                btn.querySelector('div').className = 'w-4 h-4 flex items-center justify-center text-[10px] border-none text-white';
+                
+                const correctBtn = document.querySelector(`.btn-${qIdx}-${correct}`);
+                correctBtn.classList.add('correct');
+                correctBtn.classList.remove('text-gray-300', 'bg-[#050505]');
+                correctBtn.querySelector('div').innerHTML = '<i class="fa-solid fa-check"></i>';
+                correctBtn.querySelector('div').className = 'w-4 h-4 flex items-center justify-center text-[10px] border-none text-white';
+                
+                card.classList.add('shake');
+                userAnswers[qIdx] = false;
+            }
+
+            dot.classList.add('filled');
+            solvedCount++;
+            updateHeader();
+        }
+
+        function updateHeader() {
+            const scoreLabel = document.getElementById('score-counter');
+            scoreLabel.innerText = `${solvedCount}/15 HITS`;
+            
+            scoreLabel.classList.add('text-theme-sunset');
+            scoreLabel.classList.remove('text-white');
+            setTimeout(() => {
+                scoreLabel.classList.remove('text-theme-sunset');
+                scoreLabel.classList.add('text-white');
+            }, 300);
+        }
+
+        function checkAllAndSubmit() {
+            if (solvedCount < 15) {
+                const btn = document.getElementById('submit-btn');
+                btn.classList.add('shake', 'bg-white', 'text-black');
+                btn.classList.remove('bg-theme-sunset', 'text-black');
+                btn.innerHTML = "INCOMPLETE DATA!";
+                setTimeout(() => {
+                    btn.classList.remove('shake', 'bg-white', 'text-black');
+                    btn.classList.add('bg-theme-sunset', 'text-black');
+                    btn.innerHTML = `<i class="fa-solid fa-bolt"></i> FINISH HOMEWORK`;
+                }, 1500);
+                return;
+            }
+
+            const finalCorrect = userAnswers.filter(a => a === true).length;
+            const overlay = document.getElementById('success-overlay');
+            const badge = document.getElementById('success-badge');
+            
+            document.getElementById('final-score').innerText = `SCORE: ${finalCorrect} / 15`;
+            
+            overlay.style.display = 'flex';
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                badge.classList.remove('scale-50');
+                badge.classList.add('scale-100');
+                shootConfetti();
+            }, 100);
+        }
+
+        function shootConfetti() {
+            const container = document.getElementById('app-container');
+            const colors = ['#FF7A00', '#FFC300', '#ffffff'];
+            for(let i=0; i<60; i++) {
+                let c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+                c.style.left = Math.random() * 100 + '%';
+                c.style.animation = `fall ${Math.random()*2+2}s linear forwards`;
+                c.style.animationDelay = Math.random()*0.5+'s';
+                container.appendChild(c);
+                setTimeout(() => c.remove(), 4000);
+            }
+        }
+
+        window.onload = initQuiz;
+    </script>
+</body>
+</html>
